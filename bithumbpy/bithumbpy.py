@@ -22,11 +22,11 @@ class Bithumbpy():
             ticker = self.ticker('ALL')
 
             if ticker == None:
-                return None
+                raise Exception('self.ticker() failed')
 
             if int(ticker['status']) != 0:
                 logging.error('invalid status: %d' % int(ticker['status']))
-                return None
+                raise Exception('invalid status: %d' % int(ticker['status']))
 
             all_currency = []
             for key in ticker['data'].keys():
@@ -34,7 +34,7 @@ class Bithumbpy():
             return all_currency
         except Exception as e:
             logging.error('_load_all_currency failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def _get(self, url, params=None):
         resp = requests.get(url, params=params)
@@ -42,7 +42,8 @@ class Bithumbpy():
             logging.error('get(%s) failed(%d)' % (url, resp.status_code))
             if resp.text is not None:
                 logging.error('resp: %s' % resp.text)
-            return None
+                raise Exception('requests.get() failed(%s)' % resp.text)
+            raise Exception('requests.get() failed(status_code:%d)' % resp.status_code)
         return json.loads(resp.text)
 
     def _get_sign(self, path, params, nonce):
@@ -64,8 +65,8 @@ class Bithumbpy():
         if resp.status_code != 200:
             logging.error('_post(%s) failed(%d)' % (url, resp.status_code))
             if resp.text is not None:
-                logging.error('resp: %s' % resp.text)
-            return None
+                raise Exception('requests.post() failed(%s)' % resp.text)
+            raise Exception('requests.post() failed(status_code:%d)' % resp.status_code)
         return json.loads(resp.text)
 
     ###############################################################
@@ -77,24 +78,24 @@ class Bithumbpy():
         try:
             if currency != 'ALL' and currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             return self._get(URL + currency)
         except Exception as e:
             logging.error('ticker() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def orderbook(self, currency, group_orders=1, count=5):
         URL = 'https://api.bithumb.com/public/orderbook/'
         try:
             if currency != 'ALL' and currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             if group_orders not in [0, 1]:
                 logging.error('invalid group_orders: %d' % group_orders)
-                return None
+                raise Exception('invalid group_orders: %d' % group_orders)
             if count < 1 or count > 50:
                 logging.error('invalid count: %d' % count)
-                return None
+                raise Exception('invalid count: %d' % count)
             params = {
                 'group_orders': group_orders,
                 'count': count
@@ -102,24 +103,24 @@ class Bithumbpy():
             return self._get(URL + currency, params=params)
         except Exception as e:
             logging.error('orderbook() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def transaction_history(self, currency, cont_no=None, count=20):
         URL = 'https://api.bithumb.com/public/transaction_history/'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             if count < 1 or count > 100:
                 logging.error('invalid count: %d' % count)
-                return None
+                raise Exception('invalid count: %d' % count)
             params = { 'count': count }
             if cont_no != 0:
                 params['cont_no'] = cont_no
             return self._get(URL + currency, params=params)
         except Exception as e:
             logging.error('transaction_history() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     ###############################################################
     # Private API
@@ -131,36 +132,36 @@ class Bithumbpy():
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             params = { 'currency': currency }
             return self._post(URL, params)
         except Exception as e:
             logging.error('info_account() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def info_balance(self, currency):
         URL = 'https://api.bithumb.com/info/balance'
         try:
             if currency != 'ALL' and currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             params = { 'currency': currency}
             return self._post(URL, params)
         except Exception as e:
             logging.error('info_balance() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def info_wallet_address(self, currency):
         URL = 'https://api.bithumb.com/info/wallet_address'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             params = { 'currency': currency }
             return self._post(URL, params)
         except Exception as e:
             logging.error('info_wallet_address() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
 
     def info_ticker(self, currency):
@@ -168,7 +169,7 @@ class Bithumbpy():
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             params = {
                 'order_currency': currency,
                 'payment_currency': 'KRW'
@@ -176,17 +177,17 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('info_ticker() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def info_orders(self, currency, order_id, type, count=None, after=None):
         URL = 'https://api.bithumb.com/info/orders'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             if type not in ['bid', 'ask']:
                 logging.error('invalid type: %s' % type)
-                return None
+                raise Exception('invalid type: %s' % type)
             params = {
                 'currency': currency,
                 'order_id': order_id,
@@ -199,17 +200,17 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('info_orders() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def info_user_transactions(self, currency, searchGb, offset=None, count=None):
         URL = 'https://api.bithumb.com/info/user_transactions'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             if searchGb not in [0, 1, 2, 3, 4, 5, 9]:
                 logging.error('invalid searchGb: %d' % searchGb)
-                return None
+                raise Exception('invalid searchGb: %d' % searchGb)
             params = {
                 'currency': currency,
                 'searchGb': searchGb
@@ -221,17 +222,17 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('info_user_transactions() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def trade_place(self, currency, units, price, type):
         URL = 'https://api.bithumb.com/trade/place'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             if type not in ['bid', 'ask']:
                 logging.error('invalid type: %s' % type)
-                return None
+                raise Exception('invalid type: %s' % type)
             params = {
                 'order_currency': currency,
                 'Payment_currency': 'KRW',
@@ -242,17 +243,17 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('trade_place() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def info_order_detail(self, currency, order_id, type):
         URL = 'https://api.bithumb.com/info/order_detail'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             if type not in ['bid', 'ask']:
                 logging.error('invalid type: %s' % type)
-                return None
+                raise Exception('invalid type: %s' % type)
             params = {
                 'currency': currency,
                 'type': type,
@@ -261,17 +262,17 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('info_order_detail() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def trade_cancel(self, currency, order_id, type):
         URL = 'https://api.bithumb.com/trade/cancel'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             if type not in ['bid', 'ask']:
                 logging.error('invalid type: %s' % type)
-                return None
+                raise Exception('invalid type: %s' % type)
             params = {
                 'currency': currency,
                 'type': type,
@@ -280,7 +281,7 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('trade_cancel() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     # not tested
     def trade_btc_withdrawal(self, currency, units, address, destination):
@@ -288,7 +289,7 @@ class Bithumbpy():
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             params = {
                 'currency': currency,
                 'address': address,
@@ -298,7 +299,7 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('trade_btc_withdrawal() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
 
     def trade_krw_deposit(self):
@@ -308,7 +309,7 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('trade_krw_deposit() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     # not tested
     def trade_krw_withdrawal(self, bank, account, price):
@@ -322,14 +323,14 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('trade_krw_withdrawal() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def trade_market_buy(self, currency, units):
         URL = 'https://api.bithumb.com/trade/market_buy'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             params = {
                 'currency': currency,
                 'units': units
@@ -337,14 +338,14 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('trade_market_buy() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
     def trade_market_sell(self, currency, units):
         URL = 'https://api.bithumb.com/trade/market_sell'
         try:
             if currency not in self.all_currency:
                 logging.error('invalid currency: %s' % currency)
-                return None
+                raise Exception('invalid currency: %s' % currency)
             params = {
                 'currency': currency,
                 'units': units
@@ -352,5 +353,5 @@ class Bithumbpy():
             return self._post(URL, params)
         except Exception as e:
             logging.error('trade_market_sell() failed(%s)' % str(e))
-            return None
+            raise Exception(e)
 
